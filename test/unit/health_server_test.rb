@@ -5,6 +5,11 @@ require "net/http"
 require "socket"
 
 class HealthServerTest < ActiveSupport::TestCase
+  def teardown
+    SolidQueue.puma_plugin = false
+    super
+  end
+
   def setup
     @host = "127.0.0.1"
     @port = available_port(@host)
@@ -42,6 +47,17 @@ class HealthServerTest < ActiveSupport::TestCase
   ensure
     # Avoid double-stop in teardown if we stopped here
     @server = SolidQueue::HealthServer.new(host: @host, port: @port, logger: Logger.new(IO::NULL))
+  end
+
+  def test_engine_skips_starting_health_server_when_puma_plugin_is_active
+    SolidQueue.health_server_enabled = true
+    SolidQueue.puma_plugin = true
+
+    server = SolidQueue.start_health_server_if_enabled
+    assert_nil server
+  ensure
+    SolidQueue.health_server_enabled = false
+    SolidQueue.puma_plugin = false
   end
 
   private

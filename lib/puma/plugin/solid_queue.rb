@@ -4,6 +4,8 @@ Puma::Plugin.create do
   attr_reader :puma_pid, :solid_queue_pid, :log_writer, :solid_queue_supervisor
 
   def start(launcher)
+    SolidQueue.puma_plugin = true
+
     @log_writer = launcher.log_writer
     @puma_pid = $$
 

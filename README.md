@@ -627,6 +627,9 @@ Rails.application.configure do
 end
 ```
 
+Note:
+- When the Puma plugin is active (`plugin :solid_queue` in `puma.rb`), Solid Queue will skip starting the health server even if `health_server_enabled` is set. A warning is logged instead. This prevents running multiple embedded servers in the same process tree.
+
 ## Jobs and transactional integrity
 :warning: Having your jobs in the same ACID-compliant database as your application data enables a powerful yet sharp tool: taking advantage of transactional integrity to ensure some action in your app is not committed unless your job is also committed and vice versa, and ensuring that your job won't be enqueued until the transaction within which you're enqueuing it is committed. This can be very powerful and useful, but it can also backfire if you base some of your logic on this behaviour, and in the future, you move to another active job backend, or if you simply move Solid Queue to its own database, and suddenly the behaviour changes under you. Because this can be quite tricky and many people shouldn't need to worry about it, by default Solid Queue is configured in a different database as the main app.
 

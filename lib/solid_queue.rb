@@ -45,6 +45,29 @@ module SolidQueue
   mattr_accessor :health_server_host,    default: ENV.fetch("SOLID_QUEUE_HTTP_HOST", "0.0.0.0")
   mattr_accessor :health_server_port,    default: (ENV["SOLID_QUEUE_HTTP_PORT"] || "9393").to_i
 
+  mattr_accessor :puma_plugin, default: false
+
+  def start_health_server_if_enabled
+    return nil unless health_server_enabled
+
+    if puma_plugin
+      Rails.logger.warn("SolidQueue health server is enabled but Puma plugin is active; skipping starting health server to avoid duplicate servers") if defined?(Rails)
+      return nil
+    end
+
+    server = SolidQueue::HealthServer.new(
+      host: health_server_host,
+      port: health_server_port,
+      logger: logger
+    )
+
+    on_start { server.start }
+    on_stop { server.stop }
+    on_exit { server.stop }
+
+    server
+  end
+
   delegate :on_start, :on_stop, :on_exit, to: Supervisor
 
   [ Dispatcher, Scheduler, Worker ].each do |process|
