@@ -5,11 +5,6 @@ require "net/http"
 require "socket"
 
 class HealthServerTest < ActiveSupport::TestCase
-  def teardown
-    SolidQueue.puma_plugin = false
-    super
-  end
-
   def setup
     @host = "127.0.0.1"
     @port = available_port(@host)
