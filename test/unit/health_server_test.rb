@@ -1,0 +1,72 @@
+# frozen_string_literal: true
+
+require "test_helper"
+require "net/http"
+require "socket"
+
+class HealthServerTest < ActiveSupport::TestCase
+  def setup
+    @host = "127.0.0.1"
+    @port = available_port(@host)
+    @server = SolidQueue::HealthServer.new(host: @host, port: @port, logger: Logger.new(IO::NULL))
+    @server.start
+    wait_for_server
+  end
+
+  def teardown
+    @server.stop if defined?(@server)
+  end
+
+  def test_health_endpoint_returns_ok
+    response = http_get("/health")
+    assert_equal "200", response.code
+    assert_equal "OK", response.body
+  end
+
+  def test_root_endpoint_returns_ok
+    response = http_get("/")
+    assert_equal "200", response.code
+    assert_equal "OK", response.body
+  end
+
+  def test_unknown_path_returns_not_found
+    response = http_get("/unknown")
+    assert_equal "404", response.code
+    assert_equal "Not Found", response.body
+  end
+
+  def test_stop_stops_server
+    assert @server.running?, "server should be running before stop"
+    @server.stop
+    assert_not @server.running?, "server should not be running after stop"
+  ensure
+    # Avoid double-stop in teardown if we stopped here
+    @server = SolidQueue::HealthServer.new(host: @host, port: @port, logger: Logger.new(IO::NULL))
+  end
+
+  private
+    def http_get(path)
+      Net::HTTP.start(@host, @port) do |http|
+        http.get(path)
+      end
+    end
+
+    def wait_for_server
+      # Try to connect for up to 1 second
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 1.0
+      begin
+        Net::HTTP.start(@host, @port) { |http| http.head("/") }
+      rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH
+        raise if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+        sleep 0.05
+        retry
+      end
+    end
+
+    def available_port(host)
+      tcp = TCPServer.new(host, 0)
+      port = tcp.addr[1]
+      tcp.close
+      port
+    end
+end

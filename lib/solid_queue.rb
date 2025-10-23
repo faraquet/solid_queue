@@ -41,6 +41,10 @@ module SolidQueue
   mattr_accessor :clear_finished_jobs_after, default: 1.day
   mattr_accessor :default_concurrency_control_period, default: 3.minutes
 
+  mattr_accessor :health_server_enabled, default: false
+  mattr_accessor :health_server_host,    default: ENV.fetch("SOLID_QUEUE_HTTP_HOST", "0.0.0.0")
+  mattr_accessor :health_server_port,    default: (ENV["SOLID_QUEUE_HTTP_PORT"] || "9393").to_i
+
   delegate :on_start, :on_stop, :on_exit, to: Supervisor
 
   [ Dispatcher, Scheduler, Worker ].each do |process|

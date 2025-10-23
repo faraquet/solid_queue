@@ -37,5 +37,22 @@ module SolidQueue
         include ActiveJob::ConcurrencyControls
       end
     end
+
+    initializer "solid_queue.health_server" do
+      ActiveSupport.on_load(:solid_queue) do
+        if SolidQueue.health_server_enabled
+          server = SolidQueue::HealthServer.new(
+            host: SolidQueue.health_server_host,
+            port: SolidQueue.health_server_port,
+            logger: SolidQueue.logger
+          )
+
+          # Start with supervisor lifecycle so it runs in the main SolidQueue process
+          SolidQueue.on_start { server.start }
+          SolidQueue.on_stop { server.stop }
+          SolidQueue.on_exit { server.stop }
+        end
+      end
+    end
   end
 end
