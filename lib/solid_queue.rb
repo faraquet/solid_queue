@@ -47,11 +47,11 @@ module SolidQueue
 
   mattr_accessor :puma_plugin, default: false
 
-  def start_health_server_if_enabled
+  def start_health_server
     return nil unless health_server_enabled
 
     if puma_plugin
-      Rails.logger.warn("SolidQueue health server is enabled but Puma plugin is active; skipping starting health server to avoid duplicate servers") if defined?(Rails)
+      logger.warn("SolidQueue health server is enabled but Puma plugin is active; skipping starting health server to avoid duplicate servers")
       return nil
     end
 

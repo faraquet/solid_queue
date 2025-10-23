@@ -53,7 +53,7 @@ class HealthServerTest < ActiveSupport::TestCase
     SolidQueue.health_server_enabled = true
     SolidQueue.puma_plugin = true
 
-    server = SolidQueue.start_health_server_if_enabled
+    server = SolidQueue.start_health_server
     assert_nil server
   ensure
     SolidQueue.health_server_enabled = false

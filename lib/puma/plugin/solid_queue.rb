@@ -4,8 +4,6 @@ Puma::Plugin.create do
   attr_reader :puma_pid, :solid_queue_pid, :log_writer, :solid_queue_supervisor
 
   def start(launcher)
-    SolidQueue.puma_plugin = true
-
     @log_writer = launcher.log_writer
     @puma_pid = $$
 
@@ -15,6 +13,7 @@ Puma::Plugin.create do
 
     if Gem::Version.new(Puma::Const::VERSION) < Gem::Version.new("7")
       launcher.events.on_booted do
+        SolidQueue.puma_plugin = true
         @solid_queue_pid = fork do
           Thread.new { monitor_puma }
           SolidQueue::Supervisor.start
@@ -25,6 +24,7 @@ Puma::Plugin.create do
       launcher.events.on_restart { stop_solid_queue }
     else
       launcher.events.after_booted do
+        SolidQueue.puma_plugin = true
         @solid_queue_pid = fork do
           Thread.new { monitor_puma }
           SolidQueue::Supervisor.start
